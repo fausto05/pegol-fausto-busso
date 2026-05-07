@@ -1,0 +1,160 @@
+:root {
+  color-scheme: dark;
+  --bg: #0d1321;
+  --panel: #1d2d44;
+  --accent: #3e5c76;
+  --text: #f0ebd8;
+  --muted: #ced4da;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  padding: 14px;
+}
+
+.app {
+  width: min(960px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+.menu-box {
+  text-align: center;
+  background: #14213d;
+  border-radius: 10px;
+  padding: 24px 16px;
+}
+
+.menu-box h1 {
+  margin: 0 0 8px;
+}
+
+.menu-box p {
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+
+.menu-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-height: 48px;
+  cursor: pointer;
+  font-weight: 700;
+  background: #d9ed92;
+  color: #0b132b;
+  font-size: 16px;
+}
+
+button.secondary {
+  background: #adb5bd;
+}
+
+.settings {
+  margin: 14px auto 0;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  background: #1b263b;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.settings label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.hud,
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 700;
+}
+
+canvas {
+  width: 100%;
+  max-width: 540px;
+  display: block;
+  margin: 0 auto;
+  background: #0b132b;
+  border: 2px solid #3a506b;
+  border-radius: 10px;
+  touch-action: none;
+}
+
+.state-msg {
+  min-height: 24px;
+  text-align: center;
+  margin: 10px 0 0;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  body {
+    padding: 8px;
+    align-items: start;
+  }
+
+  .app {
+    padding: 10px;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .menu-actions,
+  .controls {
+    width: 100%;
+  }
+}

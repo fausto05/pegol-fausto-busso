@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pegol - Etapa 1</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section id="startScreen" class="screen active">
+      <div class="menu-box">
+        <h1>PEGOL</h1>
+        <p>Casual / Puzle de acción futbolero</p>
+
+        <div class="menu-actions">
+          <button id="playBtn">Play</button>
+          <button id="configBtn" class="secondary">Configuración</button>
+        </div>
+
+        <div id="configPanel" class="settings hidden">
+          <strong>Opciones</strong>
+          <label>
+            <input type="checkbox" id="musicToggle" checked>
+            Música
+          </label>
+          <label>
+            <input type="checkbox" id="sfxToggle" checked>
+            Efectos de sonido
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="topbar">
+        <div class="hud">
+          <span class="badge">Estado: <span id="stateLabel">start</span></span>
+          <span class="badge">Puntaje: <span id="scoreLabel">0</span></span>
+          <span class="badge">Tiros: <span id="shotsLabel">7</span></span>
+          <span class="badge">Objetivos: <span id="targetsLabel">0</span></span>
+        </div>
+        <div class="controls">
+          <button id="resetBtn" class="secondary">Reiniciar</button>
+          <button id="backBtn" class="secondary">Menú</button>
+        </div>
+      </div>
+
+      <canvas id="gameCanvas" width="540" height="900"></canvas>
+      <p class="state-msg" id="stateMsg"></p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
