@@ -38,8 +38,83 @@ let bucket = null;
 let aimAngle = Math.PI / 2;
 let recoveredShotInCurrentTurn = false;
 let isTouchAiming = false;
-let blockInput = false; // flag para bloquear input tras reinicio
+let blockInput = false;
 
+// ── IMÁGENES ─────────────────────────────────────────────────
+const images = {};
+const imageFiles = {
+    background: "assets/images/background.png",
+    ball: "assets/images/ball.png",
+    bucket: "assets/images/bucket.png",
+    launcher: "assets/images/launcher.png",
+    pegNormal: "assets/images/peg_normal.png",
+    pegTarget: "assets/images/peg_target.png",
+    pegSpecial: "assets/images/peg_special.png",
+};
+
+let imagesLoaded = 0;
+const totalImages = Object.keys(imageFiles).length;
+
+function loadImages(callback) {
+    for (const [key, src] of Object.entries(imageFiles)) {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) callback();
+        };
+        img.onerror = () => {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) callback();
+        };
+        images[key] = img;
+    }
+}
+
+// ── AUDIO ─────────────────────────────────────────────────────
+const sounds = {};
+const soundFiles = {
+    music: "assets/audio/music_gameplay.mp3",
+    shoot: "assets/audio/sfx_shoot.mp3",
+    hit: "assets/audio/sfx_hit.mp3",
+    bucket: "assets/audio/sfx_bucket.mp3",
+    win: "assets/audio/sfx_win.mp3",
+    lose: "assets/audio/sfx_lose.mp3",
+};
+
+function loadSounds() {
+    for (const [key, src] of Object.entries(soundFiles)) {
+        const audio = new Audio(src);
+        if (key === "music") {
+            audio.loop = true;
+            audio.volume = 0.4;
+        } else {
+            audio.volume = 0.7;
+        }
+        sounds[key] = audio;
+    }
+}
+
+function playSound(key) {
+    if (!settings.sfx) return;
+    if (!sounds[key]) return;
+    sounds[key].currentTime = 0;
+    sounds[key].play().catch(() => { });
+}
+
+function startMusic() {
+    if (!settings.music) return;
+    if (!sounds.music) return;
+    sounds.music.play().catch(() => { });
+}
+
+function stopMusic() {
+    if (!sounds.music) return;
+    sounds.music.pause();
+    sounds.music.currentTime = 0;
+}
+
+// ── PEGS ──────────────────────────────────────────────────────
 function createPeg(x, y, type) {
     const points = type === "target" ? 100 : type === "special" ? 70 : 30;
     return { x, y, r: PEG_RADIUS, type, hit: false, points };
@@ -53,7 +128,6 @@ function resetLevel() {
     isTouchAiming = false;
     recoveredShotInCurrentTurn = false;
 
-    // Bloqueamos el input por 400ms para que el toque del reinicio no dispare
     blockInput = true;
     setTimeout(() => { blockInput = false; }, 400);
 
@@ -76,6 +150,7 @@ function resetLevel() {
         dir: 1,
     };
 
+    startMusic();
     stateMsg.textContent = "Arrastrá para apuntar y soltá para disparar.";
     updateHud();
 }
@@ -94,6 +169,7 @@ function showGame() {
 
 function showMenu() {
     gameState = "start";
+    stopMusic();
     startScreen.classList.add("active");
     gameScreen.classList.remove("active");
     updateHud();
@@ -110,6 +186,7 @@ function launchBall() {
         vy: Math.sin(aimAngle) * 7.2,
     };
     recoveredShotInCurrentTurn = false;
+    playSound("shoot");
     stateMsg.textContent = "Turno en curso...";
 }
 
@@ -123,8 +200,7 @@ function updateAimFromClientPosition(clientX, clientY) {
 function circleCircleCollision(a, b) {
     const dx = a.x - b.x;
     const dy = a.y - b.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    return dist <= a.r + b.r;
+    return Math.sqrt(dx * dx + dy * dy) <= a.r + b.r;
 }
 
 function circleRectCollision(circle, rect) {
@@ -162,6 +238,7 @@ function checkPegsCollision() {
         if (circleCircleCollision(ball, peg)) {
             peg.hit = true;
             score += peg.points;
+            playSound("hit");
             reflectFromPeg(peg);
         }
     }
@@ -169,18 +246,9 @@ function checkPegsCollision() {
 
 function checkWallsBounce() {
     if (!ball) return;
-    if (ball.x < ball.r) {
-        ball.x = ball.r;
-        ball.vx *= -1;
-    }
-    if (ball.x > W - ball.r) {
-        ball.x = W - ball.r;
-        ball.vx *= -1;
-    }
-    if (ball.y < ball.r) {
-        ball.y = ball.r;
-        ball.vy *= -1;
-    }
+    if (ball.x < ball.r) { ball.x = ball.r; ball.vx *= -1; }
+    if (ball.x > W - ball.r) { ball.x = W - ball.r; ball.vx *= -1; }
+    if (ball.y < ball.r) { ball.y = ball.r; ball.vy *= -1; }
 }
 
 function checkBucketCollision() {
@@ -189,6 +257,7 @@ function checkBucketCollision() {
         if (!recoveredShotInCurrentTurn) {
             shots += 1;
             recoveredShotInCurrentTurn = true;
+            playSound("bucket");
             stateMsg.textContent = "¡Recuperaste 1 tiro!";
         }
         ball.y = H + 50;
@@ -202,9 +271,13 @@ function finishTurn() {
     const targetsLeft = pegs.filter((peg) => peg.type === "target").length;
     if (targetsLeft === 0) {
         gameState = "win";
+        stopMusic();
+        playSound("win");
         stateMsg.textContent = "¡GOLAZO! Ganaste 🎉";
     } else if (shots <= 0) {
         gameState = "lose";
+        stopMusic();
+        playSound("lose");
         stateMsg.textContent = "🟥 Tarjeta roja. Sin tiros.";
     } else {
         stateMsg.textContent = "Turno terminado. Dispará de nuevo.";
@@ -224,20 +297,17 @@ function updateBall() {
     checkPegsCollision();
     checkBucketCollision();
 
-    if (ball.y > H + 40) {
-        finishTurn();
-    }
+    if (ball.y > H + 40) finishTurn();
 }
 
+// ── DIBUJO ────────────────────────────────────────────────────
 function drawBackground() {
-    ctx.fillStyle = "#1a6b2a";
-    ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(W * 0.05, H * 0.05, W * 0.9, H * 0.9);
-    ctx.beginPath();
-    ctx.arc(W / 2, H / 2, W * 0.2, 0, Math.PI * 2);
-    ctx.stroke();
+    if (images.background && images.background.complete) {
+        ctx.drawImage(images.background, 0, 0, W, H);
+    } else {
+        ctx.fillStyle = "#1a6b2a";
+        ctx.fillRect(0, 0, W, H);
+    }
 }
 
 function drawShooterAndAim() {
@@ -247,10 +317,19 @@ function drawShooterAndAim() {
     const lineX = SHOOTER.x + Math.cos(clampedAim) * 120;
     const lineY = SHOOTER.y + Math.sin(clampedAim) * 120;
 
-    ctx.fillStyle = "#e67e00";
-    ctx.beginPath();
-    ctx.arc(SHOOTER.x, SHOOTER.y, 12, 0, Math.PI * 2);
-    ctx.fill();
+    const size = 40;
+    if (images.launcher && images.launcher.complete) {
+        ctx.save();
+        ctx.translate(SHOOTER.x, SHOOTER.y);
+        ctx.rotate(clampedAim - Math.PI / 2);
+        ctx.drawImage(images.launcher, -size / 2, -size / 2, size, size);
+        ctx.restore();
+    } else {
+        ctx.fillStyle = "#e67e00";
+        ctx.beginPath();
+        ctx.arc(SHOOTER.x, SHOOTER.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     if (gameState === "playing" && !ball && !blockInput) {
         ctx.setLineDash([7, 7]);
@@ -266,34 +345,51 @@ function drawShooterAndAim() {
 
 function drawPegs() {
     for (const peg of pegs) {
-        if (peg.type === "normal") ctx.fillStyle = peg.hit ? "#a9d6e5" : "#4cc9f0";
-        if (peg.type === "target") ctx.fillStyle = peg.hit ? "#ffd6a5" : "#ff9f1c";
-        if (peg.type === "special") ctx.fillStyle = peg.hit ? "#b7efc5" : "#38b000";
-        ctx.beginPath();
-        ctx.arc(peg.x, peg.y, peg.r, 0, Math.PI * 2);
-        ctx.fill();
+        if (peg.hit) continue;
+        let img;
+        if (peg.type === "normal") img = images.pegNormal;
+        if (peg.type === "target") img = images.pegTarget;
+        if (peg.type === "special") img = images.pegSpecial;
+
+        const size = peg.r * 2.5;
+        if (img && img.complete) {
+            ctx.drawImage(img, peg.x - size / 2, peg.y - size / 2, size, size);
+        } else {
+            if (peg.type === "normal") ctx.fillStyle = "#4cc9f0";
+            if (peg.type === "target") ctx.fillStyle = "#ff9f1c";
+            if (peg.type === "special") ctx.fillStyle = "#38b000";
+            ctx.beginPath();
+            ctx.arc(peg.x, peg.y, peg.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 }
 
 function drawBucket() {
     if (!bucket) return;
-    ctx.fillStyle = "#ff595e";
-    ctx.beginPath();
-    ctx.roundRect(bucket.x - bucket.w / 2, bucket.y - bucket.h / 2, bucket.w, bucket.h, 6);
-    ctx.fill();
+    const w = bucket.w + 20;
+    const h = 40;
+    if (images.bucket && images.bucket.complete) {
+        ctx.drawImage(images.bucket, bucket.x - w / 2, bucket.y - h / 2, w, h);
+    } else {
+        ctx.fillStyle = "#ff595e";
+        ctx.beginPath();
+        ctx.roundRect(bucket.x - bucket.w / 2, bucket.y - bucket.h / 2, bucket.w, bucket.h, 6);
+        ctx.fill();
+    }
 }
 
 function drawBall() {
     if (!ball) return;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#333";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r - 2, 0, Math.PI * 2);
-    ctx.stroke();
+    const size = ball.r * 2.5;
+    if (images.ball && images.ball.complete) {
+        ctx.drawImage(images.ball, ball.x - size / 2, ball.y - size / 2, size, size);
+    } else {
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fill();
+    }
 }
 
 function drawOverlay() {
@@ -387,9 +483,17 @@ configBtn.addEventListener("click", () => configPanel.classList.toggle("hidden")
 resetBtn.addEventListener("click", resetLevel);
 backBtn.addEventListener("click", showMenu);
 
-musicToggle.addEventListener("change", () => { settings.music = musicToggle.checked; });
+musicToggle.addEventListener("change", () => {
+    settings.music = musicToggle.checked;
+    if (settings.music && gameState === "playing") startMusic();
+    else stopMusic();
+});
+
 sfxToggle.addEventListener("change", () => { settings.sfx = sfxToggle.checked; });
 
 // ── INICIO ───────────────────────────────────────────────────
-updateHud();
-loop();
+loadSounds();
+loadImages(() => {
+    updateHud();
+    loop();
+});
