@@ -43,13 +43,13 @@ let blockInput = false;
 // ── IMÁGENES ─────────────────────────────────────────────────
 const images = {};
 const imageFiles = {
-    background: "assets/images/background.png",
-    ball: "assets/images/ball.png",
-    bucket: "assets/images/bucket.png",
-    launcher: "assets/images/launcher.png",
-    pegNormal: "assets/images/peg_normal.png",
-    pegTarget: "assets/images/peg_target.png",
-    pegSpecial: "assets/images/peg_special.png",
+    background: "./assets/images/background.png",
+    ball: "./assets/images/ball.png",
+    bucket: "./assets/images/bucket.png",
+    launcher: "./assets/images/launcher.png",
+    pegNormal: "./assets/images/peg_normal.png",
+    pegTarget: "./assets/images/peg_target.png",
+    pegSpecial: "./assets/images/peg_special.png",
 };
 
 let imagesLoaded = 0;
@@ -74,12 +74,12 @@ function loadImages(callback) {
 // ── AUDIO ─────────────────────────────────────────────────────
 const sounds = {};
 const soundFiles = {
-    music: "assets/audio/music_gameplay.mp3",
-    shoot: "assets/audio/sfx_shoot.mp3",
-    hit: "assets/audio/sfx_hit.mp3",
-    bucket: "assets/audio/sfx_bucket.mp3",
-    win: "assets/audio/sfx_win.mp3",
-    lose: "assets/audio/sfx_lose.mp3",
+    music: "./assets/audio/music_gameplay.mp3",
+    shoot: "./assets/audio/sfx_shoot.mp3",
+    hit: "./assets/audio/sfx_hit.mp3",
+    bucket: "./assets/audio/sfx_bucket.mp3",
+    win: "./assets/audio/sfx_win.mp3",
+    lose: "./assets/audio/sfx_lose.mp3",
 };
 
 function loadSounds() {
