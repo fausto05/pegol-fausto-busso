@@ -50,6 +50,7 @@ function resetLevel() {
     score = 0;
     shots = MAX_SHOTS;
     ball = null;
+    isTouchAiming = false;
     recoveredShotInCurrentTurn = false;
 
     pegs = [
@@ -177,17 +178,16 @@ function checkWallsBounce() {
     }
 }
 
+// BUG 2 CORREGIDO: el bucket captura la bola en vez de rebotar
 function checkBucketCollision() {
     if (!ball || !bucket) return;
     if (circleRectCollision(ball, bucket) && ball.vy > 0) {
-        ball.vy = -Math.abs(ball.vy) * 0.95;
-        const offset = (ball.x - bucket.x) / (bucket.w / 2);
-        ball.vx += offset * 1.7;
         if (!recoveredShotInCurrentTurn) {
             shots += 1;
             recoveredShotInCurrentTurn = true;
             stateMsg.textContent = "¡Recuperaste 1 tiro!";
         }
+        ball.y = H + 50;
     }
 }
 
@@ -226,16 +226,13 @@ function updateBall() {
 }
 
 function drawBackground() {
-    // Fondo verde pasto
     ctx.fillStyle = "#1a6b2a";
     ctx.fillRect(0, 0, W, H);
 
-    // Líneas del campo
     ctx.strokeStyle = "rgba(255,255,255,0.15)";
     ctx.lineWidth = 2;
     ctx.strokeRect(W * 0.05, H * 0.05, W * 0.9, H * 0.9);
 
-    // Círculo central
     ctx.beginPath();
     ctx.arc(W / 2, H / 2, W * 0.2, 0, Math.PI * 2);
     ctx.stroke();
@@ -248,7 +245,6 @@ function drawShooterAndAim() {
     const lineX = SHOOTER.x + Math.cos(clampedAim) * 120;
     const lineY = SHOOTER.y + Math.sin(clampedAim) * 120;
 
-    // Botín (triángulo simple como placeholder)
     ctx.fillStyle = "#e67e00";
     ctx.beginPath();
     ctx.arc(SHOOTER.x, SHOOTER.y, 12, 0, Math.PI * 2);
@@ -352,8 +348,13 @@ canvas.addEventListener("click", () => {
     launchBall();
 });
 
+// BUG 1 CORREGIDO: bloqueo para que el toque del reinicio no dispare la bola
 canvas.addEventListener("touchstart", (e) => {
-    if (gameState === "win" || gameState === "lose") { resetLevel(); return; }
+    if (gameState === "win" || gameState === "lose") {
+        resetLevel();
+        setTimeout(() => { isTouchAiming = false; }, 300);
+        return;
+    }
     if (gameState !== "playing" || ball) return;
     const touch = e.touches[0];
     if (!touch) return;
