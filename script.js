@@ -14,7 +14,6 @@ const stateMsg = document.getElementById("stateMsg");
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Ajuste dinámico al tamaño real de la pantalla
 const TOPBAR_H = 48;
 const MSG_H = 32;
 canvas.width = window.innerWidth;
@@ -39,6 +38,7 @@ let bucket = null;
 let aimAngle = Math.PI / 2;
 let recoveredShotInCurrentTurn = false;
 let isTouchAiming = false;
+let blockInput = false; // flag para bloquear input tras reinicio
 
 function createPeg(x, y, type) {
     const points = type === "target" ? 100 : type === "special" ? 70 : 30;
@@ -52,6 +52,10 @@ function resetLevel() {
     ball = null;
     isTouchAiming = false;
     recoveredShotInCurrentTurn = false;
+
+    // Bloqueamos el input por 400ms para que el toque del reinicio no dispare
+    blockInput = true;
+    setTimeout(() => { blockInput = false; }, 400);
 
     pegs = [
         createPeg(W * 0.2, H * 0.2, "target"),
@@ -96,6 +100,7 @@ function showMenu() {
 }
 
 function launchBall() {
+    if (blockInput) return;
     if (gameState !== "playing" || ball || shots <= 0) return;
     ball = {
         x: SHOOTER.x,
@@ -178,7 +183,6 @@ function checkWallsBounce() {
     }
 }
 
-// BUG 2 CORREGIDO: el bucket captura la bola en vez de rebotar
 function checkBucketCollision() {
     if (!ball || !bucket) return;
     if (circleRectCollision(ball, bucket) && ball.vy > 0) {
@@ -228,11 +232,9 @@ function updateBall() {
 function drawBackground() {
     ctx.fillStyle = "#1a6b2a";
     ctx.fillRect(0, 0, W, H);
-
     ctx.strokeStyle = "rgba(255,255,255,0.15)";
     ctx.lineWidth = 2;
     ctx.strokeRect(W * 0.05, H * 0.05, W * 0.9, H * 0.9);
-
     ctx.beginPath();
     ctx.arc(W / 2, H / 2, W * 0.2, 0, Math.PI * 2);
     ctx.stroke();
@@ -250,7 +252,7 @@ function drawShooterAndAim() {
     ctx.arc(SHOOTER.x, SHOOTER.y, 12, 0, Math.PI * 2);
     ctx.fill();
 
-    if (gameState === "playing" && !ball) {
+    if (gameState === "playing" && !ball && !blockInput) {
         ctx.setLineDash([7, 7]);
         ctx.lineWidth = 2;
         ctx.strokeStyle = "#80ed99";
@@ -267,7 +269,6 @@ function drawPegs() {
         if (peg.type === "normal") ctx.fillStyle = peg.hit ? "#a9d6e5" : "#4cc9f0";
         if (peg.type === "target") ctx.fillStyle = peg.hit ? "#ffd6a5" : "#ff9f1c";
         if (peg.type === "special") ctx.fillStyle = peg.hit ? "#b7efc5" : "#38b000";
-
         ctx.beginPath();
         ctx.arc(peg.x, peg.y, peg.r, 0, Math.PI * 2);
         ctx.fill();
@@ -348,11 +349,11 @@ canvas.addEventListener("click", () => {
     launchBall();
 });
 
-// BUG 1 CORREGIDO: bloqueo para que el toque del reinicio no dispare la bola
 canvas.addEventListener("touchstart", (e) => {
+    if (blockInput) { e.preventDefault(); return; }
     if (gameState === "win" || gameState === "lose") {
         resetLevel();
-        setTimeout(() => { isTouchAiming = false; }, 300);
+        e.preventDefault();
         return;
     }
     if (gameState !== "playing" || ball) return;
