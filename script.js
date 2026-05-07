@@ -56,19 +56,25 @@ let imagesLoaded = 0;
 const totalImages = Object.keys(imageFiles).length;
 
 function loadImages(callback) {
-    for (const [key, src] of Object.entries(imageFiles)) {
+    const keys = Object.keys(imageFiles);
+    if (keys.length === 0) { callback(); return; }
+
+    keys.forEach((key) => {
         const img = new Image();
-        img.src = src;
         img.onload = () => {
             imagesLoaded++;
-            if (imagesLoaded === totalImages) callback();
+            if (imagesLoaded >= totalImages) callback();
         };
         img.onerror = () => {
             imagesLoaded++;
-            if (imagesLoaded === totalImages) callback();
+            if (imagesLoaded >= totalImages) callback();
         };
+        img.src = imageFiles[key];
         images[key] = img;
-    }
+    });
+
+    // Forzamos el arranque después de 3 segundos pase lo que pase
+    setTimeout(callback, 3000);
 }
 
 // ── AUDIO ─────────────────────────────────────────────────────
@@ -302,11 +308,17 @@ function updateBall() {
 
 // ── DIBUJO ────────────────────────────────────────────────────
 function drawBackground() {
-    if (images.background && images.background.complete) {
+    if (images.background && images.background.complete && images.background.naturalWidth > 0) {
         ctx.drawImage(images.background, 0, 0, W, H);
     } else {
         ctx.fillStyle = "#1a6b2a";
         ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(W * 0.05, H * 0.05, W * 0.9, H * 0.9);
+        ctx.beginPath();
+        ctx.arc(W / 2, H / 2, W * 0.2, 0, Math.PI * 2);
+        ctx.stroke();
     }
 }
 
@@ -318,7 +330,7 @@ function drawShooterAndAim() {
     const lineY = SHOOTER.y + Math.sin(clampedAim) * 120;
 
     const size = 40;
-    if (images.launcher && images.launcher.complete) {
+    if (images.launcher && images.launcher.complete && images.launcher.naturalWidth > 0) {
         ctx.save();
         ctx.translate(SHOOTER.x, SHOOTER.y);
         ctx.rotate(clampedAim - Math.PI / 2);
@@ -352,7 +364,7 @@ function drawPegs() {
         if (peg.type === "special") img = images.pegSpecial;
 
         const size = peg.r * 2.5;
-        if (img && img.complete) {
+        if (img && img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, peg.x - size / 2, peg.y - size / 2, size, size);
         } else {
             if (peg.type === "normal") ctx.fillStyle = "#4cc9f0";
@@ -369,7 +381,7 @@ function drawBucket() {
     if (!bucket) return;
     const w = bucket.w + 20;
     const h = 40;
-    if (images.bucket && images.bucket.complete) {
+    if (images.bucket && images.bucket.complete && images.bucket.naturalWidth > 0) {
         ctx.drawImage(images.bucket, bucket.x - w / 2, bucket.y - h / 2, w, h);
     } else {
         ctx.fillStyle = "#ff595e";
@@ -382,7 +394,7 @@ function drawBucket() {
 function drawBall() {
     if (!ball) return;
     const size = ball.r * 2.5;
-    if (images.ball && images.ball.complete) {
+    if (images.ball && images.ball.complete && images.ball.naturalWidth > 0) {
         ctx.drawImage(images.ball, ball.x - size / 2, ball.y - size / 2, size, size);
     } else {
         ctx.fillStyle = "#ffffff";
